@@ -1,0 +1,38 @@
+/**
+ * Returns the hexadecimal string of a value
+ * Used in the displaying of the colors
+ * 
+ * @author Nyaleph
+ * @version LSV3
+ * @see {@link Color}
+ * 
+ * @param value The value
+ * @param minChar The minimum number of character
+ * @return Hexadecimal string
+ **/
+function toHex(value, minChar) {
+	var hex = "0123456789ABCDEF";
+	var out = "";
+	var i = 0;
+	while (value > 16) {
+		out = hex[value & 15] + out;
+		value >>= 4;
+		i++;
+	}
+	out = hex[value] + out;
+	while (i < minChar) out = "0" + out; // Adds leading zeroes if need be
+	return out;
+}
+
+/**
+ * Grabs the first element of an array no matter what it's index is
+ * 
+ * @author Nyaleph
+ * @version LSV3
+ * 
+ * @param arr The array
+ * @return The first element of the array
+ **/
+function arrayFirst(arr) {
+	for(var el in arr) return el;
+}

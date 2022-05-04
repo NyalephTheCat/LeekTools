@@ -1,0 +1,251 @@
+include("Misc.leek")
+
+/**
+ * Color class holding the information necessary to create new colors
+ * Used for my debugs and for a beaufitul ColorMap
+ * 
+ * @auhor Nyaleph
+ * @since LSV3
+ * @see {@link ColorMap}
+ **/
+class Color {
+	// A bunch of better colors than the defaults. Feel free to suggest others
+	static black = Color(17, 17, 17);
+	static darkGray = Color(170, 170, 170);
+	static lightGray = Color(221, 221, 221);
+	static white = Color(255, 255, 255);
+	static navy = Color(0, 31, 63);
+	static blue = Color(0, 116, 217);
+	static aqua = Color(127, 219, 255);
+	static teal = Color(57, 204, 204);
+	static purple = Color(177, 13, 201);
+	static fuchia = Color(240, 18, 190);
+	static maroon = Color(133, 20, 75);
+	static red = Color(255, 65, 54);
+	static orange = Color(255, 133, 27);
+	static yellow = Color(255, 220, 0);
+	static olive = Color(61, 153, 112);
+	static green = Color(46, 204, 64);
+	static lime = Color(1, 255, 112);
+	
+	r; g; b;
+	value;
+	
+	/**
+	 * Constructs a color from its rgb components
+	 * 
+	 * @auhor Nyaleph
+	 * @since LSV3
+	 * @see Color
+	 * 
+	 * @param _red
+	 * @param _green
+	 * @param _blue
+	 **/
+	constructor(_red, _green, _blue) {
+		this.r = _red;
+		this.g = _green;
+		this.b = _blue;
+		this.value = (r << 16) + (g << 8) + b;
+	}
+	
+	/**
+	 * Constructs a color from its hexadecimal value
+	 * 
+	 * @auhor Nyaleph
+	 * @since LSV3
+	 * @see Color
+	 * 
+	 * @param color
+	 **/
+	constructor(color) {
+		this.r = color >> 16;
+		this.g = (color >> 8) & 255;
+		this.b = color & 255;
+		this.value = color;
+	}
+	
+	/**
+	 * Displays the hexadecimal values of the color in said color in the console
+	 * 
+	 * @auhor Nyaleph
+	 * @since LSV3
+	 * @see Color
+	 **/
+	test() {
+		debugC(this, this.value);
+	}
+	
+	/**
+	 * Returns the hexadecimal value of the color
+	 * 
+	 * @auhor Nyaleph
+	 * @since LSV3
+	 * @see Color
+	 * @see toHex
+	 **/
+	string() {
+		return "#" + toHex(r, 2) + toHex(g, 2) + toHex(b, 2);
+	}
+	
+	/**
+	 * Interpolates linearly between two colors a specified amount
+	 * 
+	 * @auhor Nyaleph
+	 * @since LSV3
+	 * @see Color
+	 * 
+	 * @param amount step to interpolate
+	 * @return the new color
+	 **/
+	static lerp(color1, color2, amount) {
+		return Color(
+			color1.r + (color2.r - color1.r) * amount,
+			color1.g + (color2.g - color1.g) * amount,
+			color1.b + (color2.b - color1.b) * amount
+		)
+	}
+	
+	/**
+	 * Creates a gradient array interpolating lineraly between two colors
+	 * 
+	 * @auhor Nyaleph
+	 * @since LSV3
+	 * @see Color
+	 * 
+	 * @param nb Number of colors to generate
+	 * @return the list of colors
+	 **/
+	static gradient(color1, color2, nb) {
+		var out = [];
+		var step = nb <= 1 ? 1 : 1 / (nb - 1)
+		for (var i = 0; i < nb; i++)
+			out[i] = lerp(color1, color2, step * i);
+		return out;
+	}
+	
+	/**
+	 * Adds one color to this color
+	 * 
+	 * @auhor Nyaleph
+	 * @since LSV3
+	 * @see Color
+	 * 
+	 * @param color
+	 * @return the new color
+	 **/
+	add(color) {
+		if (color.value === value) return lighten(-20);
+		return Color(
+			(r >> 1) + (color.r >> 1),
+			(g >> 1) + (color.g >> 1),
+			(b >> 1) + (color.b >> 1)
+		)
+	}
+	
+	/**
+	 * Lighten the color by a specified percent. To make the color darker
+	 * use negative percentage value
+	 * 
+	 * @auhor Nyaleph
+	 * @since LSV3
+	 * @see Color
+	 * 
+	 * @param percent the amount to lighten/darken
+	 * @return the new color
+	 **/
+	lighten(percent) {
+		return Color(
+			max(min(r * (100 + percent) / 100, 255), 0),
+			max(min(g * (100 + percent) / 100, 255), 0),
+			max(min(b * (100 + percent) / 100, 255), 0)
+		)
+	}
+}
+
+/**
+ * A map of color allowing you to use less operations to display
+ * maps with multiple uses of the same color
+ * 
+ * @author Nyaleph
+ * @since LSV3
+ * @see {@link Color}
+ **/
+class ColorMap {
+	static cells = [];
+	/**
+	 * Resets the ColorMap
+	 * 
+	 * @auhor Nyaleph
+	 * @since LSV3
+	 * @see Color
+	 * @see ColorMap
+	 **/
+	static reset() {
+		cells = [];
+	}
+	
+	/**
+	 * Adds a color to a specified cell. 
+	 * If the color exists already, add the two colors together
+	 * For the multi-cell version, use `ColorMap.addCells`
+	 * 
+	 * @auhor Nyaleph
+	 * @since LSV3
+	 * @see Color
+	 * @see ColorMap
+	 * 
+	 * @param cell the id of the cell to color
+	 * @param color the color used
+	 **/
+	static addCell(cell, color) {
+		(cells[cell] 
+			&& (cells[cell] = cells[cell].add(color)))
+			|| (cells[cell] = color);
+	}
+	
+	/**
+	 * Adds a color to a specified cell. 
+	 * If the color exists already, add the two colors together
+	 * For the single-cell version, use `ColorMap.addCell`
+	 * 
+	 * @auhor Nyaleph
+	 * @since LSV3
+	 * @see Color
+	 * @see ColorMap
+	 * 
+	 * @param cells the list of cells to color
+	 * @param color the color used
+	 **/
+	static addCells(cells, color) {
+		arrayIter(cells, function(cell) { addCell(cell, color) });
+	}
+	
+	/**
+	 * Displays all cells that need coloring with the correct color
+	 * If multiple cells use the same color, it will try to group them before using mark
+	 * 
+	 * @auhor Nyaleph
+	 * @since LSV3
+	 * @see Color
+	 * @see ColorMap
+	 * @see mark(cell, color)
+	 **/
+	static show() {
+		var colors = [];
+		var seen = [];
+		// Groups the cell by color
+		for (var cell: var color in cells) {
+			if (!seen[color]) {
+				colors[color] = []
+				seen[color] = true;
+			}
+			colors[color][cell] = cell
+		}
+		// Display the cells by color
+		for (var color: var cells in colors) {
+			mark(cells, color.value);
+		}
+	}
+}
+ColorMap.reset() // Resets the map every turn (Not doing that could be intresting to look at)

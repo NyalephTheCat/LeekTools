@@ -1,0 +1,226 @@
+include("Color.leek")
+
+/**
+ * The seed for the generation
+ * Don't check this value to check the seed as it will be changed
+ * every time you use a function using random
+ * Implemented following {@link https://en.wikipedia.org/wiki/Lehmer_random_number_generator}
+ * 
+ * Also, don't set at 0
+ **/ 
+global __randSeed = 123456789
+global rand = function() {
+	var M = 1 << 31 - 1;
+	var A = 48271;
+	var Q = M / A;    // 44488
+	var R = M % A;    //  3399
+
+	var div = __randSeed / Q;	// max: M / Q = A = 48,271
+	var rem = __randSeed % Q;	// max: Q - 1     = 44,487
+
+	var s = rem * A;	// max: 44,487 * 48,271 = 2,147,431,977 = 0x7fff3629
+	var t = div * R;	// max: 48,271 *  3,399 =   164,073,129
+	var result = s - t;
+
+	if (result < 0)
+		result += M;
+	
+	__randSeed = result;
+	return result % 1;
+}
+global randFloat = function(a, b) {
+	return a + (b - a) * rand()
+}
+global randInt = function(a, b) {
+	return randFloat(a, b) | 0
+}
+
+class Test {
+	static all = []
+	
+	name;
+	func;
+	args = {};
+	constructor(name, func, args) {
+		this.name = name;
+		this.func = func;
+		this.args = args;
+		all[this.name] = this;
+	}
+	constructor(name, func) {
+		this.name = name;
+		this.func = func;
+		all[this.name] = this;
+	}
+	
+	run() {
+		return this.func(args)
+	}
+	
+	static runAll(logNames) {
+		var success = arrayFoldLeft(all, function(acc, test) {
+			logNames && debug("Running " + test)
+			return acc + !!test.run()
+		}, 0)
+		var nbTests = count(all);
+		var percent = success / nbTests * 100;
+		
+		var color = [Color.red, Color.blue, Color.olive][(percent / 50) | 0];
+		debugC("Ran all tests: " + success + "/" + nbTests + "(" + percent + "%)", 
+			   color.value);
+	}
+	
+	string() { return name; }
+}
+
+class AssertTrue extends Test {
+	constructor(name, func, args) {
+		super(name, func, args);
+	}
+	constructor(name, func) {
+		super(name, func);
+	}
+	run() {
+		return func(args);
+	}
+}
+
+class AssertFalse extends Test {
+	constructor(name, func, args) {
+		super(name, func, args);
+	}
+	constructor(name, func) {
+		super(name, func);
+	}
+	run() {
+		return !func(args);
+	}
+}
+
+class AssertEq extends Test {
+	val;
+	constructor(name, val, func, args) {
+		super(name, func, args);
+		this.val = val;
+	}
+	constructor(name, val, func) {
+		super(name, func);
+		this.val = val;
+	}
+	run() {
+		return func(args) === val;
+	}
+}
+
+class AssertNe extends AssertEq {
+	constructor(name, val, func, args) {
+		super(name, val, func, args);
+	}
+	constructor(name, val, func) {
+		super(name, val, func);
+	}
+	run() {
+		return func(args) !== val;
+	}
+}
+
+class AssertLt extends AssertEq {
+	constructor(name, val, func, args) {
+		super(name, val, func, args);
+	}
+	constructor(name, val, func) {
+		super(name, val, func);
+	}
+	run() {
+		return func(args) < val;
+	}
+}
+
+class AssertLe extends AssertEq {
+	constructor(name, val, func, args) {
+		super(name, val, func, args);
+	}
+	constructor(name, val, func) {
+		super(name, val, func);
+	}
+	run() {
+		return func(args) <= val;
+	}
+}
+
+class AssertGt extends AssertEq {
+	constructor(name, val, func, args) {
+		super(name, val, func, args);
+	}
+	constructor(name, val, func) {
+		super(name, val, func);
+	}
+	run() {
+		return func(args) > val;
+	}
+}
+
+class AssertGe extends AssertEq {
+	constructor(name, val, func, args) {
+		super(name, val, func, args);
+	}
+	constructor(name, val, func) {
+		super(name, val, func);
+	}
+	run() {
+		return func(args) <= val;
+	}
+}
+
+class AssertTable extends AssertEq {
+	constructor(name, val, func, args) {
+		super(name, val, func, args);
+	}
+	constructor(name, val, func) {
+		super(name, val, func);
+	}
+	run() {
+		var res = func(args);
+		for (var key: var val in res) {
+			if (val[key] != val) return false;
+		}
+		return true;
+	}
+}
+
+class AssertClass extends AssertEq {
+	constructor(name, val, func, args) {
+		super(name, val, func, args);
+	}
+	constructor(name, val, func) {
+		super(name, val, func);
+	}
+	run() {
+		return func(args) instanceof val;
+	}
+}
+
+class AssertInstance extends AssertEq {
+	constructor(name, val, func, args) {
+		super(name, val, func, args);
+	}
+	constructor(name, val, func) {
+		super(name, val, func);
+	}
+	run() {
+		var res = func(args);
+		// Checks that res and val are insitinguishable without having to be the same object
+		// This allows for clone() to be used inside of the function
+		if (!(res.class === val.class)) return false;
+		for (var key in val.class.fields) {
+			if (res[key] !== val[key]) return false;
+		}
+		return true;
+	}
+}
+
+Test("Check that it works", function(_) {
+	return true;
+})
+
+Test.runAll(true)
